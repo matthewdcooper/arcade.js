@@ -1,0 +1,135 @@
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>snakes</title>
+	<link rel="stylesheet" href="style.css">
+	<script src="vector.js"></script>
+	<script src="apple.js"></script>
+	<script src="snake.js"></script>
+	<script src="playercontrols.js"></script>
+	<script src="ai.js"></script>
+</head>	
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+	
+// global game variables
+var FPS = 15;
+var WIDTH = 800;
+var HEIGHT = 600;
+var CELL_SIZE = 20; 
+var SNAKE_START_LENGTH = 5;
+var SNAKE_START_POS = new Vector(40, 40);
+var COM_START_POS = new Vector(40, HEIGHT-40);
+var NUM_APPLES = 1;
+
+/* WIDTH, HEIGHT and the x, y components of SNAKE_START_POS and COM_START_POS
+   must all be multiples of CELL_SIZE, otherwise the snakes won't collide
+   properly with the apples. */
+
+
+function randomPosition(cellSize) {
+	var x = Math.floor(Math.random() * cnv.width/cellSize) * cellSize;
+	var y = Math.floor(Math.random() * cnv.height/cellSize) * cellSize;
+	return new Vector(x, y);
+}
+
+
+function game() {
+    // main game loop
+	ctx.clearRect(0,0,cnv.width,cnv.height); // clear screen
+	
+	for (var i = 0; i < snakes.length; i++) {
+		snakes[i].update();
+		snakes[i].render();
+		
+		if (!snakes[i].alive && snakes[i].respawnTimer < 0)  {
+			snakes[i].respawn();
+		}
+		
+		if (!snakes[i].alive) continue;
+		
+		// check self collision
+		tail = snakes[i].body.slice(1, snakes[i].body.length)
+		if (snakes[i].collidesWith(tail)) snakes[i].die();
+		
+		// check collisions with other snakes
+		for (var j = 0; j < snakes.length; j++) {
+			if (i == j) continue;
+			if (snakes[i].collidesWith(snakes[j].body)) snakes[i].die();
+		}
+		// check collisions with apples (and render apples)
+		for (var j = 0; j < apples.length; j++) {
+			if (snakes[i].collides(apples[j].position)) {
+				snakes[i].eat();
+				apples[j].move();
+			}
+			apples[j].render();		
+		}
+	}
+};
+
+
+function titleScreen() {
+    var startPlaying = false;
+    if (!titleScreen.timer) titleScreen.timer = FPS*2;
+    titleScreen.timer--;
+    if (titleScreen.timer <=0) startPlaying = true;
+
+    ctx.font = "72px Helvetica";
+    ctx.textAlign = "center";
+    ctx.fillText("snakes", cnv.width/2, cnv.height/3);
+
+    if (startPlaying) {
+        clearInterval(start);
+        setInterval(game, 1000/FPS);
+    }
+}
+
+
+window.onload = function() {
+
+    // set up canvas and context
+    cnv = document.getElementById("canvas");
+    cnv.style.marginTop = Math.floor(window.innerHeight * 0.1);
+    cnv.width = WIDTH;
+    cnv.height = HEIGHT;
+    ctx = canvas.getContext("2d");
+
+    // global style
+	ctx.lineWidth=3;
+
+    // snakes
+    snakes = [];
+    player = new Snake(SNAKE_START_POS, CELL_SIZE,
+                       SNAKE_START_LENGTH, "#25661D");
+    mapArrowsToSnake(player);
+    mapWasdToSnake(player);
+
+    computer = new Snake(COM_START_POS, CELL_SIZE,
+                         SNAKE_START_LENGTH, "#665E1D");
+    giveBasicAi(computer)
+
+    snakes.push(player)
+    snakes.push(computer)
+
+
+    // apples
+    apples = []
+    for (let i = 0; i < NUM_APPLES; i++) {
+        apples.push(new Apple(CELL_SIZE));
+    }
+
+    start = setInterval(titleScreen, 1000/FPS);
+};
+
+
+
+</script>
+</body>
+</html>
+
