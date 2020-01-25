@@ -1,0 +1,9 @@
+h1 {
+	text-align: center;
+}
+
+canvas {
+	display: block;
+	margin: auto;
+	border: solid black 2px;
+}
